@@ -127,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
     }
+
     protected void stopBackgroundThread() {
         mBackgroundThread.quitSafely();
         try {
@@ -167,6 +168,12 @@ public class MainActivity extends AppCompatActivity {
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
             final File file = new File(Environment.getExternalStorageDirectory()+"/pic.jpg");
+
+            if (!isExternalStorageWritable()){
+                Log.e(TAG, "External Storage not writable.");
+                return;
+            }
+            //final File file = new File(Environment.getDataDirectory()+"/pic.jpg");
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
@@ -178,8 +185,10 @@ public class MainActivity extends AppCompatActivity {
                         buffer.get(bytes);
                         save(bytes);
                     } catch (FileNotFoundException e) {
+                        Log.e(TAG, "FileNotFoundException - Trying to write pic");
                         e.printStackTrace();
                     } catch (IOException e) {
+                        Log.e(TAG, "IOException - Trying to write pic");
                         e.printStackTrace();
                     } finally {
                         if (image != null) {
@@ -294,6 +303,16 @@ public class MainActivity extends AppCompatActivity {
             imageReader = null;
         }
     }
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
