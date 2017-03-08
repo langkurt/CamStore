@@ -16,6 +16,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -167,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
             // Orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            final File file = new File(Environment.getExternalStorageDirectory()+"/pic.jpg");
+            final File file = new File(Environment.getExternalStorageDirectory()+"/pic2.jpg");
 
             if (!isExternalStorageWritable()){
                 Log.e(TAG, "External Storage not writable.");
@@ -275,6 +276,17 @@ public class MainActivity extends AppCompatActivity {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
                 return;
+            }
+
+            int perm = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (perm == PackageManager.PERMISSION_DENIED){
+                Log.e(TAG, "WRITE EXTERMAL Perm Denied!!!!\n Request that shit!");
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        REQUEST_CAMERA_PERMISSION);
+            }
+            else {
+                Log.e(TAG, "WRITE EXTERMAL Perm GRANTED!!!!");
             }
             manager.openCamera(cameraId, stateCallback, null);
         } catch (CameraAccessException e) {
