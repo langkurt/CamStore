@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="100dip"
+    tools:context=".MainActivity" >
+    <HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/hsv"
+        android:layout_alignParentTop="true"
+        android:fillViewport="true"
+        android:measureAllChildren="false"
+        android:scrollbars="none" >
+
+            <LinearLayout
+                android:id="@+id/asthma_action_plan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/controlled_medication"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/as_needed_medication"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/rescue_medication"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/your_symptoms"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/your_triggers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/wheeze_rate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/peak_flow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent" >
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@android:drawable/ic_input_add" />
+                    <TextView
+                        android:layout_width="0.2dp"
+                        android:layout_height="fill_parent"
+                        android:layout_alignParentRight="true"
+                        android:text="@string/take_picture" />
+                </RelativeLayout>
+            </LinearLayout>
+
+    </HorizontalScrollView>
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="0.2dp"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/hsv"
+        android:text="@string/take_picture" />
+    <LinearLayout
+        android:id="@+id/prev"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:paddingLeft="5dip"
+        android:paddingRight="5dip"
+        android:descendantFocusability="blocksDescendants" >
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@android:drawable/ic_input_add" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/next"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:paddingLeft="5dip"
+        android:paddingRight="5dip"
+        android:descendantFocusability="blocksDescendants" >
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@android:drawable/ic_input_add" />
+    </LinearLayout>
+</RelativeLayout>

@@ -60,8 +60,10 @@ public class MainActivity extends AppCompatActivity {
     private CameraCaptureSession cameraCaptureSessions;
     private String cameraId;
     private ImageReader imageReader;
+    private String picStoreLocation = Environment.getExternalStorageDirectory()+"/default.jpg";
 
     private static final int REQUEST_CAMERA_PERMISSION = 200;
+    private static final int MINIMUM_PREVIEW_SIZE = 320;
 
     protected CameraDevice cameraDevice;
 
@@ -69,12 +71,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         textureView = (TextureView) findViewById(R.id.texture);
-
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
-
         textureView.setSurfaceTextureListener(textureListener);
         takePictureButton = (Button) findViewById(R.id.btn_takepicture);
         assert takePictureButton != null;
@@ -150,7 +149,8 @@ public class MainActivity extends AppCompatActivity {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
             if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+                StreamConfigurationMap configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                jpegSizes = configs.getOutputSizes(ImageFormat.JPEG);
             }
             int width = 640;
             int height = 480;
@@ -158,23 +158,32 @@ public class MainActivity extends AppCompatActivity {
                 width = jpegSizes[0].getWidth();
                 height = jpegSizes[0].getHeight();
             }
+
             ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+
+            // Surfaces used for camera capture session
             List<Surface> outputSurfaces = new ArrayList<Surface>(2);
-            outputSurfaces.add(reader.getSurface());
             outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
+            outputSurfaces.add(reader.getSurface());
+
+
             final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            final File file = new File(Environment.getExternalStorageDirectory()+"/pic2.jpg");
+
+            final File file = new File(picStoreLocation);
 
             if (!isExternalStorageWritable()){
                 Log.e(TAG, "External Storage not writable.");
                 return;
             }
-            //final File file = new File(Environment.getDataDirectory()+"/pic.jpg");
+            else {
+                Log.e(TAG, "External Storage is writable.");
+            }
+
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
@@ -209,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             };
+
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
                 @Override
@@ -218,7 +228,8 @@ public class MainActivity extends AppCompatActivity {
                     createCameraPreview();
                 }
             };
-            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
+
+            CameraCaptureSession.StateCallback captureCallback = new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     try {
@@ -227,14 +238,21 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+
                 @Override
                 public void onConfigureFailed(CameraCaptureSession session) {
+                    Log.e(TAG, "****\n Configure failed");
                 }
-            }, mBackgroundHandler);
+            };
+
+
+            cameraDevice.createCaptureSession(outputSurfaces, captureCallback, mBackgroundHandler);
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
+
     protected void createCameraPreview() {
         try {
             SurfaceTexture texture = textureView.getSurfaceTexture();
