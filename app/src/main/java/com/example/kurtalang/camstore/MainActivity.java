@@ -3,6 +3,7 @@ package com.example.kurtalang.camstore;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.params.StreamConfigurationMap;
@@ -13,7 +14,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
+
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -24,12 +25,17 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.hardware.camera2.*;
 import android.widget.Button;
 import android.util.Size;
 import android.widget.Toast;
+import android.content.SharedPreferences;
+import android.widget.RelativeLayout;
+import android.widget.LinearLayout;
+import android.content.res.ColorStateList;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +46,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
+
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
+
 
 public class MainActivity extends AppCompatActivity {
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -53,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "DEBUG CAMERA";
     private TextureView textureView;
     private FloatingActionButton takePictureButton;
+    private FloatingActionButton addFolderButton;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     private Size imageDimension;
@@ -60,10 +73,9 @@ public class MainActivity extends AppCompatActivity {
     private CameraCaptureSession cameraCaptureSessions;
     private String cameraId;
     private ImageReader imageReader;
-    private String picStoreLocation = Environment.getExternalStorageDirectory()+"/default.jpg";
+    private String picStoreLocation = Environment.getExternalStorageDirectory()+"/";
 
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private static final int MINIMUM_PREVIEW_SIZE = 320;
 
     protected CameraDevice cameraDevice;
 
@@ -83,6 +95,48 @@ public class MainActivity extends AppCompatActivity {
                 takePicture();
             }
         });
+
+        // Create a new folder for captures
+        addFolderButton = (FloatingActionButton) findViewById(R.id.add_folder);
+        //assert addFolderButton != null;
+        addFolderButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addFolder();
+            }
+        });
+
+        /*Log.e(TAG, "Getting saved preferences file data");
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(getString(R.string.saved_high_score), newHighScore);
+        editor.commit();*/
+
+
+    }
+
+    private void addFolder() {
+
+        // Programatically create a new button and folder attached to it. Add it to hsv
+        FloatingActionButton fab = new FloatingActionButton(MainActivity.this);
+
+        RelativeLayout.LayoutParams lay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        fab.setLayoutParams(lay);
+
+        fab.setBackgroundTintList(ColorStateList.valueOf(Color.BLUE));
+
+        fab.setId(View.generateViewId());
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d("DEBUG", "Adding FAB");
+            }
+        });
+
+        LinearLayout hsv = (LinearLayout) findViewById(R.id.innerLay);
+        hsv.addView(fab, hsv.getChildCount() - 1);
+
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
@@ -174,7 +228,8 @@ public class MainActivity extends AppCompatActivity {
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
 
-            final File file = new File(picStoreLocation);
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+            final File file = new File(picStoreLocation + timeStamp);
 
             if (!isExternalStorageWritable()){
                 Log.e(TAG, "External Storage not writable.");

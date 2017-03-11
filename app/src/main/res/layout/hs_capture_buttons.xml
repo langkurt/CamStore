@@ -3,78 +3,76 @@
 <HorizontalScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:id="@+id/hsv"
-    android:fillViewport="true"
-    android:measureAllChildren="false"
+    android:fillViewport="false"
+    android:measureAllChildren="true"
     android:gravity="center_vertical"
     android:scrollbars="none">
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/innerLay"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         style="@android:style/Holo.ButtonBar">
 
 
-        <android.support.design.widget.FloatingActionButton
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/btn_takepicture"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginStart="150dp"
-            app:fabSize="mini"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fabSize="normal"
             app:useCompatPadding="true"/>
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/btn2"
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/add_folder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fab_size="normal"
+            app:useCompatPadding="true" />
+
+
+
+
+        <com.github.clans.fab.FloatingActionMenu
+            android:id="@+id/menu_red"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:fabSize="mini"
-            app:useCompatPadding="true"/>
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/btn3"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:fabSize="mini"
-            app:useCompatPadding="true"/>
+            fab:menu_fab_label="Menu label">
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/btn4"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:fabSize="mini"
-            app:useCompatPadding="true"/>
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/fab1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
 
-        <Button
-            android:id="@+id/button2"
-            android:text="Button2"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginRight="15dp"/>
+                fab:fab_size="mini"
+                fab:fab_label="Disabled" />
 
-        <Button
-            android:id="@+id/button3"
-            android:text="Button3"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginRight="15dp"/>
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/fab2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
 
-        <Button
-            android:id="@+id/button4"
-            android:text="Button4"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginRight="15dp"/>
+                fab:fab_size="mini"
+                fab:fab_label="Remove button" />
 
-        <Button
-            android:id="@+id/button5"
-            android:text="Button5"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginRight="15dp"/>
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/fab3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
 
-    </LinearLayout>
+                fab:fab_size="mini"
+                fab:fab_label="Restore Button" />
+
+        </com.github.clans.fab.FloatingActionMenu>
+
+
+
+
+
+    </RelativeLayout>
 </HorizontalScrollView>
