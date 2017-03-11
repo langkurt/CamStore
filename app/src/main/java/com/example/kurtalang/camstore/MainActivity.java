@@ -15,11 +15,9 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -29,12 +27,10 @@ import android.view.ViewGroup;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.hardware.camera2.*;
-import android.widget.Button;
 import android.util.Size;
 import android.widget.Toast;
 import android.content.SharedPreferences;
 import android.widget.RelativeLayout;
-import android.widget.LinearLayout;
 import android.content.res.ColorStateList;
 
 import java.io.File;
@@ -76,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private String picStoreLocation = Environment.getExternalStorageDirectory()+"/";
 
     private static final int REQUEST_CAMERA_PERMISSION = 200;
+    private int numCaptureBtns;
 
     protected CameraDevice cameraDevice;
 
@@ -87,14 +84,7 @@ public class MainActivity extends AppCompatActivity {
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-        takePictureButton = (FloatingActionButton) findViewById(R.id.btn_takepicture);
-        assert takePictureButton != null;
-        takePictureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                takePicture();
-            }
-        });
+
 
         // Create a new folder for captures
         addFolderButton = (FloatingActionButton) findViewById(R.id.add_folder);
@@ -102,40 +92,75 @@ public class MainActivity extends AppCompatActivity {
         addFolderButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addFolder();
+                addFab(0);
             }
         });
 
-        /*Log.e(TAG, "Getting saved preferences file data");
+        Log.e(TAG, "Getting saved preferences file data");
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt(getString(R.string.saved_high_score), newHighScore);
-        editor.commit();*/
+        numCaptureBtns = sharedPref.getInt("numCaptureBtns", 1); // if numCaptureBtns isnt there, defaults to 1
+        Log.e("OMFG!!!", "numCapture buttons should be three is: " + numCaptureBtns);
 
+        // Create all our capture buttons programmatically
+        for (int i = 1; i <= numCaptureBtns; ++i) {
+            addFab(i);
+        }
+
+
+        // To write to pref file us this
+        //SharedPreferences.Editor editor = sharedPref.edit();
+        //editor.putInt("numCaptureBtns", numCaptureBtns);
+        //editor.commit();
 
     }
 
-    private void addFolder() {
+    private void addFab(int id) {
 
-        // Programatically create a new button and folder attached to it. Add it to hsv
+        Log.e(TAG, "Calling addFab with id: " + id);
+
+        // Programatically create a new button. Add it to hsv
         FloatingActionButton fab = new FloatingActionButton(MainActivity.this);
+        FloatingActionMenu addMenuBtn = (FloatingActionMenu) this.findViewById(R.id.add_menu);
+        RelativeLayout hsv = (RelativeLayout) findViewById(R.id.innerLay);
+        RelativeLayout.LayoutParams lay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        int lastBtn = hsv.getChildCount() - 1; // minus the 'add folder' button. Doesnt count
 
-        RelativeLayout.LayoutParams lay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+        if (id > 1) {
+            fab.setId(id);
+            lay.addRule(RelativeLayout.END_OF, id - 1);
+        }
+        else if (id == 0) {
+            fab.setId(lastBtn + 1);
+            lay.addRule(RelativeLayout.END_OF, lastBtn);
+        }
+        else {
+            fab.setId(id);
+            // relative to nothing cause its first one.
+        }
+
+        lay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1); // hope this resolves to true
+        lay.setMargins(15, 10, 15, 200);
         fab.setLayoutParams(lay);
-
         fab.setBackgroundTintList(ColorStateList.valueOf(Color.BLUE));
-
-        fab.setId(View.generateViewId());
+        fab.setButtonSize(FloatingActionButton.SIZE_MINI);
+        fab.setLabelText("btn" + id);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.d("DEBUG", "Adding FAB");
+                takePicture();
             }
         });
 
-        LinearLayout hsv = (LinearLayout) findViewById(R.id.innerLay);
-        hsv.addView(fab, hsv.getChildCount() - 1);
+        hsv.addView(fab, lastBtn);
+
+        // Set where the 'add folder' button should be
+        RelativeLayout.LayoutParams menuLay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        menuLay.addRule(RelativeLayout.END_OF, lastBtn);
+        menuLay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1); // hope this resolves to true
+        menuLay.setMargins(-110, 10, 0, 10);
+
+        addMenuBtn.setLayoutParams(menuLay);
 
     }
 
