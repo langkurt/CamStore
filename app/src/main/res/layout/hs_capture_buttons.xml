@@ -78,8 +78,10 @@
                  />
 
             <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/new_drive_folder"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                fab:fab_label="New Drive Folder"/>
 
         </com.github.clans.fab.FloatingActionMenu>
 

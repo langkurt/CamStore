@@ -1,11 +1,24 @@
 package com.example.kurtalang.camstore;
 
 import android.Manifest;
+import android.app.DialogFragment;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -14,24 +27,31 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.hardware.camera2.*;
-import android.util.Size;
-import android.widget.Toast;
-import android.content.SharedPreferences;
 import android.widget.RelativeLayout;
-import android.content.res.ColorStateList;
+import android.widget.Toast;
+
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveFolder.DriveFolderResult;
+import com.google.android.gms.drive.MetadataChangeSet;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -39,17 +59,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Calendar;
-import java.text.SimpleDateFormat;
+import java.util.List;
 
-import com.github.clans.fab.FloatingActionButton;
-import com.github.clans.fab.FloatingActionMenu;
+public class MainActivity extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        NewFolderDialogFragment.NoticeDialogListener{
 
-
-public class MainActivity extends AppCompatActivity {
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -62,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
     private TextureView textureView;
     private FloatingActionButton takePictureButton;
     private FloatingActionButton addFolderButton;
+    private FloatingActionButton newDriveBtn;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     private Size imageDimension;
@@ -70,9 +91,12 @@ public class MainActivity extends AppCompatActivity {
     private String cameraId;
     private ImageReader imageReader;
     private String picStoreLocation = Environment.getExternalStorageDirectory()+"/";
+    private String m_Text = "";
 
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private int numCaptureBtns;
+    private GoogleApiClient mGoogleApiClient;
+    protected static final int REQUEST_CODE_RESOLUTION = 1;
 
     protected CameraDevice cameraDevice;
 
@@ -85,6 +109,14 @@ public class MainActivity extends AppCompatActivity {
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
 
+        // Connect to google drive
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Drive.API)
+                .addScope(Drive.SCOPE_FILE)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+
 
         // Create a new folder for captures
         addFolderButton = (FloatingActionButton) findViewById(R.id.add_folder);
@@ -93,6 +125,15 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 addFab(0);
+            }
+        });
+
+        newDriveBtn = (FloatingActionButton) findViewById(R.id.new_drive_folder);
+        newDriveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String folderName = askFolderName();
+                driveAPIcreateFolder(folderName);
             }
         });
 
@@ -113,6 +154,30 @@ public class MainActivity extends AppCompatActivity {
         //editor.commit();
 
     }
+
+    private String askFolderName () {
+        // Create an instance of the dialog fragment and show it
+        DialogFragment dialog = new NewFolderDialogFragment();
+        dialog.show(getFragmentManager(), "NewFolderDialogFragment");
+
+        return "Hardcode";
+    }
+
+    private void driveAPIcreateFolder(String folderName) {
+
+        return;
+    }
+
+    final ResultCallback<DriveFolderResult> createFolderCallback = new ResultCallback<DriveFolderResult>() {
+        @Override
+        public void onResult(DriveFolderResult result) {
+            if (!result.getStatus().isSuccess()) {
+                showMessage("Error while trying to create the folder");
+                return;
+            }
+            showMessage("Created a folder: " + result.getDriveFolder().getDriveId());
+        }
+    };
 
     private void addFab(int id) {
 
@@ -138,9 +203,10 @@ public class MainActivity extends AppCompatActivity {
             // relative to nothing cause its first one.
         }
 
+        int dp_fab = (int) (getResources().getDimension(R.dimen.fab_caputure_margin) / getResources().getDisplayMetrics().density);
         lay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1); // hope this resolves to true
-        lay.setMargins(15, 10, 15, 200);
         fab.setLayoutParams(lay);
+        lay.setMargins(dp_fab, dp_fab, dp_fab, dp_fab);
         fab.setBackgroundTintList(ColorStateList.valueOf(Color.BLUE));
         fab.setButtonSize(FloatingActionButton.SIZE_MINI);
         fab.setLabelText("btn" + id);
@@ -158,11 +224,37 @@ public class MainActivity extends AppCompatActivity {
         RelativeLayout.LayoutParams menuLay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         menuLay.addRule(RelativeLayout.END_OF, lastBtn);
         menuLay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1); // hope this resolves to true
-        menuLay.setMargins(-110, 10, 0, 10);
+        int dp_menu = (int) (getResources().getDimension(R.dimen.fab_menu) / getResources().getDisplayMetrics().density);
+
+        menuLay.setMargins( dp_menu, dp_fab, 0, dp_fab);
 
         addMenuBtn.setLayoutParams(menuLay);
 
     }
+
+    public GoogleApiClient getGoogleApiClient() {
+        return mGoogleApiClient;
+    }
+
+    public void showMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog, String title){
+
+        MetadataChangeSet changeSet = new MetadataChangeSet.Builder().setTitle(title).build();
+
+        Drive.DriveApi.getRootFolder(getGoogleApiClient()).createFolder(
+                getGoogleApiClient(), changeSet).setResultCallback(createFolderCallback);
+
+    }
+
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+
+    }
+
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
         @Override
@@ -453,6 +545,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.i(TAG, "GoogleApiClient connection failed: " + result.toString());
+        if (!result.hasResolution()) {
+            // show the localized error dialog.
+            GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
+            return;
+        }
+        try {
+            result.startResolutionForResult(this, REQUEST_CODE_RESOLUTION);
+        } catch (IntentSender.SendIntentException e) {
+            Log.e(TAG, "Exception while starting resolution activity", e);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_RESOLUTION && resultCode == RESULT_OK) {
+            mGoogleApiClient.connect();
+        }
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -472,5 +594,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
     }
 }
