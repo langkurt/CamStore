@@ -1,5 +1,5 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="fab_caputure_margin">16dp</dimen>
-    <dimen name="fab_menu">-94dp</dimen>
+    <dimen name="fab_menu">-18dp</dimen>
 </resources>

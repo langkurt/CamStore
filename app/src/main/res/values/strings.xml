@@ -4,4 +4,6 @@
     <string name="take_picture">Take picture</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="new_local_folder">New Local Folder</string>
+    <string name="new_drive_folder">New Drive Folder</string>
 </resources>

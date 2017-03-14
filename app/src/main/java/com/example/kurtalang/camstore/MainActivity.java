@@ -23,18 +23,15 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.Size;
@@ -61,6 +58,7 @@ import com.google.android.gms.drive.DriveFile;
 import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveFolder.DriveFileResult;
 import com.google.android.gms.drive.DriveFolder.DriveFolderResult;
+import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.MetadataChangeSet;
 
 import java.io.File;
@@ -95,8 +93,6 @@ public class MainActivity extends AppCompatActivity implements
     private static final String TAG = "DEBUG CAMERA";
     private TextureView textureView;
     private FloatingActionButton takePictureButton;
-    private FloatingActionButton addFolderButton;
-    private FloatingActionButton newDriveBtn;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     private Size imageDimension;
@@ -104,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements
     private CameraCaptureSession cameraCaptureSessions;
     private String cameraId;
     private ImageReader imageReader;
-    private String picStoreLocation = Environment.getExternalStorageDirectory()+"/";
+    private String picStoreLocation = Environment.getExternalStorageDirectory() + "/Pictures/";
     private String m_Text = "";
     private File requestedFile;
 
@@ -114,6 +110,9 @@ public class MainActivity extends AppCompatActivity implements
     Map<String, String> captureLocations = new HashMap<String, String>();
     protected static final int REQUEST_CODE_RESOLUTION = 0;
     private static final int TAKE_PICTURE_REQUEST_CODE = 1;
+    private static int FOLDER_TO_CREATE = 0;
+    private static final int LOCAL_FOLDER = 0;
+    private static final int DRIVE_FOLDER = 1;
 
     protected CameraDevice cameraDevice;
 
@@ -121,6 +120,7 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         textureView = (TextureView) findViewById(R.id.texture);
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
@@ -136,8 +136,7 @@ public class MainActivity extends AppCompatActivity implements
 
 
         // Create a new folder for captures
-        addFolderButton = (FloatingActionButton) findViewById(R.id.add_folder);
-        //assert addFolderButton != null;
+        FloatingActionButton addFolderButton = (FloatingActionButton) findViewById(R.id.add_folder);
         addFolderButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -145,18 +144,32 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        newDriveBtn = (FloatingActionButton) findViewById(R.id.new_drive_folder);
+        FloatingActionButton newDriveBtn = (FloatingActionButton) findViewById(R.id.new_drive_folder);
         newDriveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                FOLDER_TO_CREATE = DRIVE_FOLDER;
                 askFolderName();
             }
         });
+
+        FloatingActionButton newLocalBtn = (FloatingActionButton) findViewById(R.id.new_local_folder);
+        newLocalBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FOLDER_TO_CREATE = LOCAL_FOLDER;
+                askFolderName();
+            }
+        });
+
+        //FloatingActionMenu addMenuBtn = (FloatingActionMenu) this.findViewById(R.id.add_menu);
 
         // Get saved capture buttons and the locations they point to.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         numCaptureBtns = sharedPref.getInt("numCaptureBtns", 1); // if numCaptureBtns isnt there, defaults to 1
         String loc;
+
+        numCaptureBtns = 0; // Debugging initial state
 
         // Create all our capture buttons programmatically
         for (int i = 1; i <= numCaptureBtns; ++i) {
@@ -164,7 +177,6 @@ public class MainActivity extends AppCompatActivity implements
             captureLocations.put("btnLoc" + i, loc);
             addFab(i);
         }
-
 
         // To write to pref file us this
         //SharedPreferences.Editor editor = sharedPref.edit();
@@ -204,10 +216,12 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         int dp_fab = (int) (getResources().getDimension(R.dimen.fab_caputure_margin) / getResources().getDisplayMetrics().density);
-        lay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1); // hope this resolves to true
+        int fab_menu = (int) (getResources().getDimension(R.dimen.fab_menu) / getResources().getDisplayMetrics().density);
+        lay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1);
+        lay.setMargins(dp_fab, 0, dp_fab, fab_menu);
+
         fab.setLayoutParams(lay);
-        lay.setMargins(dp_fab, dp_fab, dp_fab, dp_fab);
-        fab.setBackgroundTintList(ColorStateList.valueOf(Color.BLUE));
+        fab.setBackgroundTintList(ColorStateList.valueOf(Color.rgb(140,240,240)));
         fab.setButtonSize(FloatingActionButton.SIZE_MINI);
         fab.setLabelText("btn" + id);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -215,7 +229,6 @@ public class MainActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 Log.d("DEBUG", "Adding FAB");
                 takePicture(id);
-                //takePictureWithIntent();
             }
         });
 
@@ -223,12 +236,8 @@ public class MainActivity extends AppCompatActivity implements
 
         // Set where the 'add folder' button should be
         RelativeLayout.LayoutParams menuLay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        menuLay.addRule(RelativeLayout.END_OF, lastBtn);
-        menuLay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1); // hope this resolves to true
-        int dp_menu = (int) (getResources().getDimension(R.dimen.fab_menu) / getResources().getDisplayMetrics().density);
-
-        menuLay.setMargins( dp_menu, dp_fab, 0, dp_fab);
-
+        menuLay.addRule(RelativeLayout.END_OF, lastBtn-1);
+        menuLay.addRule(RelativeLayout.ALIGN_BOTTOM, 1); // hope this resolves to true
         addMenuBtn.setLayoutParams(menuLay);
 
     }
@@ -244,10 +253,27 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, String title){
 
-        MetadataChangeSet changeSet = new MetadataChangeSet.Builder().setTitle(title).build();
+        if (FOLDER_TO_CREATE == DRIVE_FOLDER) {
+            MetadataChangeSet changeSet = new MetadataChangeSet.Builder().setTitle(title).build();
+            Drive.DriveApi.getRootFolder(getGoogleApiClient()).createFolder(
+                    getGoogleApiClient(), changeSet).setResultCallback(createFolderCallback);
+        }
 
-        Drive.DriveApi.getRootFolder(getGoogleApiClient()).createFolder(
-                getGoogleApiClient(), changeSet).setResultCallback(createFolderCallback);
+        if (FOLDER_TO_CREATE == LOCAL_FOLDER) {
+            picStoreLocation = Environment.getExternalStorageDirectory() + "/Pictures/" + title + "/";
+            File sddir = new File(picStoreLocation);
+            if (!sddir.mkdirs()) {
+                if (!sddir.exists()) {
+                    Toast.makeText(MainActivity.this, "Folder error", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+
+            RelativeLayout hsv = (RelativeLayout) findViewById(R.id.innerLay);
+            int lastBtn = hsv.getChildCount(); // minus the 'add folder' button. Doesnt count
+            captureLocations.put("btnLoc" + lastBtn, picStoreLocation);
+            addFab(lastBtn);
+        }
 
     }
 
@@ -262,9 +288,10 @@ public class MainActivity extends AppCompatActivity implements
 
             // Now create the button that places the pictures at this folder
             RelativeLayout hsv = (RelativeLayout) findViewById(R.id.innerLay);
-            int lastBtn = hsv.getChildCount() - 1; // minus the 'add folder' button. Doesnt count
+            int lastBtn = hsv.getChildCount(); // minus the 'add folder' button. Doesnt count
+            captureLocations.put("btnLoc" + lastBtn, "" + result.getDriveFolder().getDriveId());
 
-            addFab(3);
+            addFab(lastBtn);
         }
     };
 
@@ -273,6 +300,7 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    /* Camera Functions */
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
@@ -290,7 +318,6 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
     };
-
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(CameraDevice camera) {
@@ -309,24 +336,6 @@ public class MainActivity extends AppCompatActivity implements
             cameraDevice = null;
         }
     };
-
-    protected void startBackgroundThread() {
-        mBackgroundThread = new HandlerThread("Camera Background");
-        mBackgroundThread.start();
-        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
-    }
-
-    protected void stopBackgroundThread() {
-        mBackgroundThread.quitSafely();
-        try {
-            mBackgroundThread.join();
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     protected void takePicture(int id) {
         if(null == cameraDevice) {
             Log.e(TAG, "cameraDevice is null");
@@ -349,6 +358,9 @@ public class MainActivity extends AppCompatActivity implements
                 height = jpegSizes[0].getHeight();
             }
 
+            width =  1920;
+            height = 1080;
+
             ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
 
             // Surfaces used for camera capture session
@@ -369,7 +381,15 @@ public class MainActivity extends AppCompatActivity implements
                 picStoreLocation = captureLocations.get("btnLoc"+id);
             }
 
-            final File file = new File(picStoreLocation + timeStamp);
+            final File file;
+            if (!picStoreLocation.toLowerCase().contains(("" + Environment.getExternalStorageDirectory()).toLowerCase())) {
+                // google file
+                file = new File(Environment.getExternalStorageDirectory(), "temp.jpg");
+            }
+            else {
+                file = new File(picStoreLocation + "CamStore_" + timeStamp + ".jpg");
+            }
+            //final File file = new File(getExternalCacheDir(), "temp.jpg");
 
             if (!isExternalStorageWritable()){
                 Log.e(TAG, "External Storage not writable.");
@@ -389,7 +409,11 @@ public class MainActivity extends AppCompatActivity implements
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
                         save(bytes);
-                        upload(file);
+
+                        if (!picStoreLocation.toLowerCase().contains(("" + Environment.getExternalStorageDirectory()).toLowerCase())) {
+                            upload(file, picStoreLocation);
+                        }
+
                     } catch (FileNotFoundException e) {
                         Log.e(TAG, "FileNotFoundException - Trying to write pic");
                         e.printStackTrace();
@@ -403,6 +427,7 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
                 private void save(byte[] bytes) throws IOException {
+                    Log.e(TAG, "Saving file");
                     OutputStream output = null;
                     try {
                         output = new FileOutputStream(file);
@@ -448,7 +473,6 @@ public class MainActivity extends AppCompatActivity implements
             e.printStackTrace();
         }
     }
-
     protected void createCameraPreview() {
         try {
             SurfaceTexture texture = textureView.getSurfaceTexture();
@@ -519,14 +543,19 @@ public class MainActivity extends AppCompatActivity implements
             e.printStackTrace();
         }
     }
-    private void closeCamera() {
-        if (null != cameraDevice) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-        if (null != imageReader) {
-            imageReader.close();
-            imageReader = null;
+    protected void startBackgroundThread() {
+        mBackgroundThread = new HandlerThread("Camera Background");
+        mBackgroundThread.start();
+        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+    }
+    protected void stopBackgroundThread() {
+        mBackgroundThread.quitSafely();
+        try {
+            mBackgroundThread.join();
+            mBackgroundThread = null;
+            mBackgroundHandler = null;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -567,7 +596,6 @@ public class MainActivity extends AppCompatActivity implements
         stopBackgroundThread();
         super.onPause();
     }
-
     @Override
     protected void onStart() {
         super.onStart();
@@ -576,6 +604,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onConnectionFailed(ConnectionResult result) {
+        // TODO app crashes if no internet with IllegalStateException
         Log.i(TAG, "GoogleApiClient connection failed: " + result.toString());
         if (!result.hasResolution()) {
             // show the localized error dialog.
@@ -589,7 +618,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -602,20 +630,10 @@ public class MainActivity extends AppCompatActivity implements
                     Log.v(TAG, "onActivityResult: user cancelled?");
                 }
                 break;
-            case TAKE_PICTURE_REQUEST_CODE:
-                if (resultCode == Activity.RESULT_OK) {
-                    Log.v(TAG, "onActivityResult: got an image");
-                    upload(requestedFile);
-                    return;
-                } else {
-                    Log.v(TAG, "onActivityResult: error taking picture");
-                }
-                break;
             default:
                 // let super do its thing
                 break;
         }
-
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -642,29 +660,14 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
-
-    }
+    public void onConnected(@Nullable Bundle bundle) {}
 
     @Override
-    public void onConnectionSuspended(int i) {
+    public void onConnectionSuspended(int i) {}
 
-    }
-
-    protected void takePictureWithIntent() {
-        Log.v(TAG, "takePictureWithIntent");
-        requestedFile = new File(Environment.getExternalStorageDirectory(), "/temp.jpg");
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        Uri photoURI = FileProvider.getUriForFile(MainActivity.this, MainActivity.this.getApplicationContext().getPackageName() + ".provider", requestedFile);
-        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, TAKE_PICTURE_REQUEST_CODE);
-        }
-    }
-
-    protected void upload(final File file) {
+    protected void upload(final File file, String picStoreLocation) {
         Log.v(TAG, "uploading " + file);
-        new FileUploader(mGoogleApiClient) {
+        new FileUploader(mGoogleApiClient, picStoreLocation) {
             @Override
             protected void onPostExecute(DriveFile result) {
                 super.onPostExecute(result);
@@ -682,8 +685,10 @@ public class MainActivity extends AppCompatActivity implements
 
     private static class FileUploader extends AsyncTask<File, Void, DriveFile> {
         private final GoogleApiClient client;
-        private FileUploader(GoogleApiClient client) {
+        private final String picStoreLocation;
+        private FileUploader(GoogleApiClient client, String picStoreLocation) {
             this.client = client;
+            this.picStoreLocation = picStoreLocation;
         }
 
         @Override
@@ -702,12 +707,19 @@ public class MainActivity extends AppCompatActivity implements
                 Log.e(TAG, "Cannot upload file", ex);
                 return null;
             }
-            MetadataChangeSet metadata = new MetadataChangeSet.Builder() //
-                    .setTitle("picture.jpg") //
-                    .setMimeType("image/jpeg") //
+
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+
+            DriveId driveId = DriveId.decodeFromString(picStoreLocation);
+            DriveFolder folder = driveId.asDriveFolder();
+
+            MetadataChangeSet metadata = new MetadataChangeSet.Builder()
+                    .setTitle("CamStore_" + timeStamp + ".jpg")
+                    .setMimeType("image/jpeg")
                     .build();
-            DriveFolder root = Drive.DriveApi.getRootFolder(client);
-            DriveFileResult createResult = root.createFile(client, metadata, contents).await();
+
+            //DriveFolder root = Drive.DriveApi.getRootFolder(client);
+            DriveFileResult createResult = folder.createFile(client, metadata, contents).await();
             if (!createResult.getStatus().isSuccess()) {
                 Log.e(TAG, "Cannot create file");
                 return null;
