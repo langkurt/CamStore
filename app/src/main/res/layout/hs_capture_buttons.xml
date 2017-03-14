@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+
 <HorizontalScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -13,7 +14,103 @@
     android:layout_alignParentBottom="true"
     android:scrollbars="none">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    <LinearLayout
+        android:id="@+id/innerLay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_marginBottom="50dp">
+
+        <com.santhosh.snapscrollview.HorizontalSnapScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+        </com.santhosh.snapscrollview.HorizontalSnapScrollView>
+
+        <!--RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/new_local_folder1"
+                android:text="A Label!!!!" />
+
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/new_local_folder1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_camera_"
+                android:layout_alignParentBottom="true"
+                fab:fab_label="@string/new_local_folder"/>
+
+        </RelativeLayout-->
+
+        <LinearLayout
+            android:id="@+id/menu_fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            >
+
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/add_menu"
+                android:layout_marginBottom="10dp">
+
+                <com.github.clans.fab.FloatingActionMenu
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:layout_marginBottom="0dp"
+                    android:layout_marginLeft="0dp"
+                    fab:menu_animationDelayPerItem="1"
+                    fab:menu_colorNormal="@color/colorAccent"
+                    fab:menu_colorPressed="@color/colorPrimary"
+                    fab:menu_colorRipple="@color/colorPrimaryDark"
+                    fab:menu_labels_maxLines="2"
+                    fab:menu_labels_position="left"
+                    fab:menu_labels_ellipsize="end">
+
+                    <com.github.clans.fab.FloatingActionButton
+                        android:id="@+id/new_local_folder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_camera_"
+                        fab:fab_label="@string/new_local_folder"/>
+
+                    <com.github.clans.fab.FloatingActionButton
+                        android:id="@+id/new_drive_folder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_google_drive_light"
+                        fab:fab_label="@string/new_drive_folder"/>
+
+
+                    <com.github.clans.fab.FloatingActionButton
+                        android:id="@+id/add_folder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        fab:fab_label="Add button" />
+
+
+                </com.github.clans.fab.FloatingActionMenu>
+
+                <TextView
+                    android:layout_width="0.2dp"
+                    android:layout_height="fill_parent"
+                    android:layout_alignParentRight="true"  />
+            </RelativeLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!--RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:fab="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/innerLay"
@@ -61,5 +158,5 @@
 
         </com.github.clans.fab.FloatingActionMenu>
 
-    </RelativeLayout>
+    </RelativeLayout-->
 </HorizontalScrollView>

@@ -42,11 +42,12 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.clans.fab.FloatingActionButton;
-import com.github.clans.fab.FloatingActionMenu;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -60,6 +61,7 @@ import com.google.android.gms.drive.DriveFolder.DriveFileResult;
 import com.google.android.gms.drive.DriveFolder.DriveFolderResult;
 import com.google.android.gms.drive.DriveId;
 import com.google.android.gms.drive.MetadataChangeSet;
+import com.santhosh.snapscrollview.HorizontalSnapScrollView;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -113,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements
     private static int FOLDER_TO_CREATE = 0;
     private static final int LOCAL_FOLDER = 0;
     private static final int DRIVE_FOLDER = 1;
+    private HorizontalSnapScrollView horizontalSnapScrollView;
 
     protected CameraDevice cameraDevice;
 
@@ -120,6 +123,8 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        horizontalSnapScrollView = new HorizontalSnapScrollView(MainActivity.this);
 
         textureView = (TextureView) findViewById(R.id.texture);
         textureView = (TextureView) findViewById(R.id.texture);
@@ -166,10 +171,11 @@ public class MainActivity extends AppCompatActivity implements
 
         // Get saved capture buttons and the locations they point to.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        numCaptureBtns = sharedPref.getInt("numCaptureBtns", 1); // if numCaptureBtns isnt there, defaults to 1
+        numCaptureBtns = sharedPref.getInt("numCaptureBtns", 0); // if numCaptureBtns isnt there, defaults to 1
         String loc;
 
-        numCaptureBtns = 0; // Debugging initial state
+
+        numCaptureBtns = 10; // Debugging initial state
 
         // Create all our capture buttons programmatically
         for (int i = 1; i <= numCaptureBtns; ++i) {
@@ -177,6 +183,9 @@ public class MainActivity extends AppCompatActivity implements
             captureLocations.put("btnLoc" + i, loc);
             addFab(i);
         }
+
+
+
 
         // To write to pref file us this
         //SharedPreferences.Editor editor = sharedPref.edit();
@@ -196,10 +205,17 @@ public class MainActivity extends AppCompatActivity implements
         Log.e(TAG, "Calling addFab with id: " + id);
 
         // Programatically create a new button. Add it to hsv
-        FloatingActionButton fab = new FloatingActionButton(MainActivity.this);
-        FloatingActionMenu addMenuBtn = (FloatingActionMenu) this.findViewById(R.id.add_menu);
-        RelativeLayout hsv = (RelativeLayout) findViewById(R.id.innerLay);
+
+        // 1. Relative layout as button parent
+        RelativeLayout parent = new RelativeLayout(MainActivity.this);
+        RelativeLayout.LayoutParams parent_layout = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        parent.setLayoutParams(parent_layout);
+
+
+        // 2. FloatingActionButton as child of relative layout
+        android.support.design.widget.FloatingActionButton fab = new android.support.design.widget.FloatingActionButton(MainActivity.this);
         RelativeLayout.LayoutParams lay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout hsv = (LinearLayout) findViewById(R.id.innerLay);
         int lastBtn = hsv.getChildCount() - 1; // minus the 'add folder' button. Doesnt count
 
         if (id > 1) {
@@ -216,14 +232,17 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         int dp_fab = (int) (getResources().getDimension(R.dimen.fab_caputure_margin) / getResources().getDisplayMetrics().density);
-        int fab_menu = (int) (getResources().getDimension(R.dimen.fab_menu) / getResources().getDisplayMetrics().density);
+        //int fab_menu = (int) (getResources().getDimension(R.dimen.fab_menu) / getResources().getDisplayMetrics().density);
         lay.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, 1);
-        lay.setMargins(dp_fab, 0, dp_fab, fab_menu);
+        fab.setImageResource(R.drawable.ic_camera_);
+        //fab.setElevation(2);
+        fab.setSize(android.support.design.widget.FloatingActionButton.SIZE_NORMAL);
+        fab.setFocusable(true);
+        fab.setUseCompatPadding(true);
+        //lay.setMargins(dp_fab, dp_fab, dp_fab, dp_fab);
 
         fab.setLayoutParams(lay);
         fab.setBackgroundTintList(ColorStateList.valueOf(Color.rgb(140,240,240)));
-        fab.setButtonSize(FloatingActionButton.SIZE_MINI);
-        fab.setLabelText("btn" + id);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -232,13 +251,34 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        hsv.addView(fab, lastBtn);
 
-        // Set where the 'add folder' button should be
-        RelativeLayout.LayoutParams menuLay = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        menuLay.addRule(RelativeLayout.END_OF, lastBtn-1);
-        menuLay.addRule(RelativeLayout.ALIGN_BOTTOM, 1); // hope this resolves to true
-        addMenuBtn.setLayoutParams(menuLay);
+
+        // 3. TextView as label and child of relative layout
+        TextView textView = new TextView(MainActivity.this);
+        parent_layout.addRule(RelativeLayout.ABOVE, fab.getId());
+        textView.setLayoutParams(parent_layout);
+
+        // 4. Add textview and fab to parent and parent to innerLay aka hsv
+        parent.addView(textView, 0);
+        parent.addView(fab, 1);
+        hsv.addView(parent,lastBtn);
+
+        // 4.5 Testing new hosizonal library for snapping
+//        HorizontalSnapScrollView.LayoutParams hssv_lay = new HorizontalSnapScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+//        horizontalSnapScrollView.setLayoutParams(hssv_lay);
+//        horizontalSnapScrollView.addView(parent,lastBtn);
+//        horizontalSnapScrollView.setChildMargins(dp_fab, dp_fab, dp_fab,dp_fab);
+//        horizontalSnapScrollView.getParent();
+//        RelativeLayout root_layout = (RelativeLayout) findViewById(R.id.root_view);
+//        root_layout.addView(horizontalSnapScrollView);
+
+        // 5. Set location of fab_menu
+        LinearLayout fab_menu = (LinearLayout) findViewById(R.id.menu_fab);
+        LinearLayout.LayoutParams fab_lay = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        int fab_dp = (int) (getResources().getDimension(R.dimen.fab_menu) / getResources().getDisplayMetrics().density);
+        fab_lay.setMargins(fab_dp, 0, 0 , 0);
+        fab_menu.setLayoutParams(fab_lay);
+
 
     }
 
@@ -269,7 +309,7 @@ public class MainActivity extends AppCompatActivity implements
                 }
             }
 
-            RelativeLayout hsv = (RelativeLayout) findViewById(R.id.innerLay);
+            LinearLayout hsv = (LinearLayout) findViewById(R.id.innerLay);
             int lastBtn = hsv.getChildCount(); // minus the 'add folder' button. Doesnt count
             captureLocations.put("btnLoc" + lastBtn, picStoreLocation);
             addFab(lastBtn);
@@ -287,7 +327,7 @@ public class MainActivity extends AppCompatActivity implements
             showMessage("Created a folder: " + result.getDriveFolder());
 
             // Now create the button that places the pictures at this folder
-            RelativeLayout hsv = (RelativeLayout) findViewById(R.id.innerLay);
+            LinearLayout hsv = (LinearLayout) findViewById(R.id.innerLay);
             int lastBtn = hsv.getChildCount(); // minus the 'add folder' button. Doesnt count
             captureLocations.put("btnLoc" + lastBtn, "" + result.getDriveFolder().getDriveId());
 

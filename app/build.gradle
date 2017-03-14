@@ -32,5 +32,6 @@ dependencies {
     compile 'com.android.support:design:25.2.0'
     compile 'com.github.clans:fab:1.6.4'
     compile 'com.google.android.gms:play-services-drive:10.2.0'
+    compile 'com.github.santhoshkumar2794:SnapScrollView:1.1.1'
     testCompile 'junit:junit:4.12'
 }
