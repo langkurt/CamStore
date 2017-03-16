@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 
-<HorizontalScrollView
+<com.santhosh.snapscrollview.HorizontalSnapScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fab="http://schemas.android.com/apk/res-auto"
@@ -159,4 +159,4 @@
         </com.github.clans.fab.FloatingActionMenu>
 
     </RelativeLayout-->
-</HorizontalScrollView>
+</com.santhosh.snapscrollview.HorizontalSnapScrollView>
